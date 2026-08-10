@@ -1,6 +1,6 @@
-import { char, serial } from "drizzle-orm/mysql-core";
 import {
   pgTable,
+  pgEnum,
   uuid,
   serial,
   integer,
@@ -8,100 +8,207 @@ import {
   char,
   text,
   timestamp,
-  pgenum,
+  date,
+  boolean,
+  primaryKey,
+  unique,
 } from "drizzle-orm/pg-core";
 
-export const role = pgEnum("role", ["user", "admin"]);
-export const sClass = pgEnum("class", ["standard", "premium"]);
-export const statusEnum = pgEnum("status", ["pending", "confirmed", "cancelled"]);
+export const roleEnum = pgEnum("role", ["user", "admin"]);
 
+export const seatClassEnum = pgEnum("seat_class", ["standard", "premium"]);
 
+export const reservationStatusEnum = pgEnum("reservation_status", [
+  "pending",
+  "confirmed",
+  "cancelled",
+]);
+
+/* 
+=========================
+   USERS
+========================= 
+*/
 export const users = pgTable("users", {
-    id: uuid("id").primarykey().defaultRandom(),
+  id: uuid("id").primaryKey().defaultRandom(),
 
-    username: varchar("username", { length: 255 }).notNull(),
+  profilePicture: varchar("profile_picture", {
+    length: 255,
+  }).default("/default-profile.png"),
 
-    email: varchar("email", { length: 255 }).notNull().unique(),
+  username: varchar("username", {
+    length: 255,
+  }).notNull(),
 
-    password: varchar("password", { length: 255 }).notNull(),
+  email: varchar("email", {
+    length: 255,
+  })
+    .notNull()
+    .unique(),
 
-    birthdate: timestamp("birthdate").notNull(),
+  password: varchar("password", {
+    length: 255,
+  }).notNull(),
 
-    gender: varchar("gender", { length: 10 }).default("other"),
+  birthdate: date("birthdate").notNull(),
 
-    role: role("role").default("user").notNull(),
+  gender: varchar("gender", {
+    length: 10,
+  }).default("other"),
 
-    createdAt: timestamp("created_at").defaultNow()
+  role: roleEnum("role").default("user").notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/* 
+=========================
+   MOVIES
+========================= 
+*/
 export const movies = pgTable("movies", {
-    id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().defaultRandom(),
 
-    title: varchar("title", { length: 255 }).notNull(),
+  title: varchar("title", {
+    length: 255,
+  }).notNull(),
 
-    description: text("description").notNull(),
+  description: text("description").notNull(),
 
-    posterUrl: varchar("poster_url", { length: 255 }).notNull(),
+  posterUrl: varchar("poster_url", {
+    length: 255,
+  }).default("/default-img.png"),
 
-    trailerUrl: varchar("trailer_url", { length: 255 }).notNull(),
+  trailerUrl: varchar("trailer_url", {
+    length: 255,
+  }).default("/default-video.mp4"),
 
-    duration: integer("duration").notNull()
-})
+  duration: integer("duration").notNull(),
+});
 
+/* 
+=========================
+   GENRES
+========================= 
+*/
 export const genres = pgTable("genres", {
-    id: serial("id").primaryKey(),
+  id: serial("id").primaryKey(),
 
-    name: varchar("name", { length: 255 }).notNull().unique()
-})
+  name: varchar("name", {
+    length: 255,
+  })
+    .notNull()
+    .unique(),
+});
 
-export const movieGenres = pgTable("movie_genres", {
-    movieId: uuid("movie_id").notNull().references(() => movies.id),
+/* 
+=========================
+   MOVIE ↔ GENRE
+========================= 
+*/
+export const movieGenres = pgTable(
+  "movie_genres",
+  {
+    movieId: uuid("movie_id")
+      .notNull()
+      .references(() => movies.id),
 
-    genreId: integer("genre_id").notNull().references(() => genres.id),
+    genreId: integer("genre_id")
+      .notNull()
+      .references(() => genres.id),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.movieId, table.genreId],
+    }),
+  ],
+);
 
-    primaryKey: ["movieId", "genreId"]
-})
-
+/* =========================
+   SCREENS
+========================= */
 export const screens = pgTable("screens", {
+  id: serial("id").primaryKey(),
+});
+
+/* =========================
+   SEATS
+========================= */
+export const seats = pgTable(
+  "seats",
+  {
     id: serial("id").primaryKey(),
-})
 
-export const seats = pgTable("seats", {
-    id: serial("id").primaryKey(),
+    screenId: integer("screen_id")
+      .notNull()
+      .references(() => screens.id),
 
-    screenId: serial("screen_id").notNull().references(() => screens.id),
+    seatRow: char("seat_row", {
+      length: 1,
+    }).notNull(),
 
-    seatRow: char("seat_row").notNull(),
+    seatNumber: integer("seat_number").notNull(),
 
-    seatNumber: varchar("seat_number", { length: 10 }).notNull(),
+    seatClass: seatClassEnum("seat_class").default("standard").notNull(),
+  },
+  (table) => [unique().on(table.screenId, table.seatRow, table.seatNumber)],
+);
 
-    seatClass: sClass("seat_class").default("standard").notNull(),
-
-    isAvailable: boolean("is_available").default(true)
-})
-
+/* =========================
+   SHOWTIMES
+========================= */
 export const showTimes = pgTable("show_times", {
-    id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().defaultRandom(),
 
-    movieId: uuid("movie_id").notNull().references(() => movies.id),
+  movieId: uuid("movie_id")
+    .notNull()
+    .references(() => movies.id),
 
-    screenId: serial("screen_id").notNull().references(() => screens.id),
+  screenId: integer("screen_id")
+    .notNull()
+    .references(() => screens.id),
 
-    startTime: timestamp("start_time").notNull(),
+  startTime: timestamp("start_time").notNull(),
+});
 
-    availableSeats: integer("available_seats").notNull()
-})
-
+/* =========================
+   RESERVATIONS
+========================= */
 export const reservations = pgTable("reservations", {
-    id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().defaultRandom(),
 
-    userId: uuid("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
 
-    showTimeId: uuid("show_time_id").notNull().references(() => showTimes.id),
+  showTimeId: uuid("show_time_id")
+    .notNull()
+    .references(() => showTimes.id),
 
-    seatId: serial("seat_id").notNull().references(() => seats.id),
+  status: reservationStatusEnum("status").default("pending").notNull(),
 
-    status: statusEnum("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
-    createdAt: timestamp("created_at").defaultNow()
-})
+/* 
+=========================
+   RESERVATION ↔ SEAT
+========================= 
+*/
+export const reservationSeats = pgTable(
+  "reservation_seats",
+  {
+    reservationId: uuid("reservation_id")
+      .notNull()
+      .references(() => reservations.id),
+
+    seatId: integer("seat_id")
+      .notNull()
+      .references(() => seats.id),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.reservationId, table.seatId],
+    }),
+  ],
+);
