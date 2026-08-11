@@ -232,3 +232,10 @@ export const reservationSeats = pgTable(
     }),
   ],
 );
+
+
+/* 
+=========================
+   insertions
+========================= 
+*/

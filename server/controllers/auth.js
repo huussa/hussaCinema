@@ -49,7 +49,7 @@ function validPassword(value) {
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password, birthdate, gender = "other" } = req.body;
+    const { username, email, password, birthdate, gender = "other", role = "user" } = req.body;
     const normalizedEmail = email?.trim().toLowerCase();
 
     if (!username?.trim() || !normalizedEmail || !password || !birthdate) {
@@ -101,6 +101,7 @@ export const register = async (req, res) => {
         password: hashedPassword,
         birthdate,
         gender: gender?.trim().toLowerCase() || "other",
+        role: role?.trim().toLowerCase() || "user",
       })
       .returning();
 
