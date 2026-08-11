@@ -8,6 +8,13 @@
       "when": 1786474167301,
       "tag": "0000_mature_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786474167302,
+      "tag": "0001_add_login_codes",
+      "breakpoints": true
     }
   ]
 }

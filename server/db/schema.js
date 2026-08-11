@@ -61,6 +61,26 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/*
+=========================
+   PASSWORDLESS LOGIN CODES
+=========================
+*/
+export const loginCodes = pgTable("login_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
+
+  codeHash: varchar("code_hash", { length: 255 }).notNull(),
+
+  expiresAt: timestamp("expires_at").notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 /* 
 =========================
    MOVIES

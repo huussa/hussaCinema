@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
+import { randomInt } from "node:crypto";
 import { db } from "../db/index.js";
-import { users } from "../db/schema.js";
+import { loginCodes, users } from "../db/schema.js";
+import { sendLoginCode } from "../services/email.js";
 
 const TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const LOGIN_CODE_MAX_AGE = 10 * 60 * 1000;
 
 const cookieOptions = {
   httpOnly: true,
@@ -142,6 +145,80 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error("Login failed:", error);
     return res.status(500).json({ message: "Unable to sign in" });
+  }
+};
+
+export const requestLoginCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!validEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please provide a valid email address" });
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
+
+    // Keep this response identical for unknown emails, so account emails cannot be guessed.
+    if (!user) {
+      return res.json({ message: "If an account exists, a sign-in code has been sent." });
+    }
+
+    const code = String(randomInt(100000, 1000000));
+    const codeHash = await bcrypt.hash(code, 12);
+    const expiresAt = new Date(Date.now() + LOGIN_CODE_MAX_AGE);
+
+    await db.delete(loginCodes).where(eq(loginCodes.userId, user.id));
+    await db.insert(loginCodes).values({ userId: user.id, codeHash, expiresAt });
+    await sendLoginCode(user.email, code);
+
+    return res.json({ message: "If an account exists, a sign-in code has been sent." });
+  } catch (error) {
+    console.error("Sending login code failed:", error);
+    return res.status(500).json({ message: "Unable to send sign-in code" });
+  }
+};
+
+export const loginWithCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedCode = code?.trim();
+
+    if (!validEmail(normalizedEmail) || !/^\d{6}$/.test(normalizedCode || "")) {
+      return res.status(400).json({ message: "A valid email and 6-digit code are required" });
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
+    if (!user) return res.status(401).json({ message: "Invalid or expired sign-in code" });
+
+    const [loginCode] = await db
+      .select()
+      .from(loginCodes)
+      .where(eq(loginCodes.userId, user.id))
+      .limit(1);
+
+    const isValid =
+      loginCode &&
+      loginCode.expiresAt > new Date() &&
+      (await bcrypt.compare(code, loginCode.codeHash));
+    if (!isValid) return res.status(401).json({ message: "Invalid or expired sign-in code" });
+
+    await db.delete(loginCodes).where(eq(loginCodes.id, loginCode.id));
+
+    const token = createToken(user);
+    res.cookie("token", token, cookieOptions);
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    console.error("Code login failed:", error);
+    return res.status(500).json({ message: "Unable to sign in with code" });
   }
 };
 
