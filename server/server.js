@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import moviesRoutes from './routes/moviesRoutes.js';
 import screensRoutes from './routes/screensRoutes.js';
+// import showtimesRoutes from './routes/showtimesRoutes.js';
+// import reservationsRoutes from './routes/reservationsRoutes.js';
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ app.use(cors({
 app.use("/api", authRoutes);
 app.use("/api", moviesRoutes);
 app.use("/api", screensRoutes);
+// app.use("/api", showtimesRoutes);
+// app.use("/api", reservationsRoutes);
 
 const port = process.env.PORT || 5000;
 

@@ -1,6 +1,7 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { genres, movieGenres, movies, showTimes } from "../db/schema.js";
+import { createShowTimes } from "./showtimes.js";
 
 function movieValues(body = {}, partial = false) {
   const values = {};
@@ -123,14 +124,32 @@ export const createMovie = async (req, res) => {
     const { values, error } = movieValues(req.body);
     const { genreIds, error: genreError } = genreIdsFrom(req.body, true);
     if (error || genreError) return res.status(400).json({ message: error || genreError });
+    if (!Array.isArray(req.body.showTimes) || req.body.showTimes.length === 0) {
+      return res.status(400).json({ message: "showTimes must be a non-empty array" });
+    }
     if (!(await genresExist(genreIds))) {
       return res.status(400).json({ message: "One or more genre IDs do not exist" });
     }
 
     const [movie] = await db.insert(movies).values(values).returning();
-    await db.insert(movieGenres).values(genreIds.map((genreId) => ({ movieId: movie.id, genreId })));
+    try {
+      const showTimeResult = await createShowTimes(movie.id, movie.duration, req.body.showTimes);
+      if (showTimeResult.error) {
+        await db.delete(movies).where(eq(movies.id, movie.id));
+        return res.status(showTimeResult.status || 400).json({ message: showTimeResult.error });
+      }
 
-    return res.status(201).json({ movie: await movieWithGenres(movie.id) });
+      await db.insert(movieGenres).values(genreIds.map((genreId) => ({ movieId: movie.id, genreId })));
+      return res.status(201).json({
+        movie: await movieWithGenres(movie.id),
+        showTimes: showTimeResult.showTimes,
+      });
+    } catch (error) {
+      await db.delete(movieGenres).where(eq(movieGenres.movieId, movie.id));
+      await db.delete(showTimes).where(eq(showTimes.movieId, movie.id));
+      await db.delete(movies).where(eq(movies.id, movie.id));
+      throw error;
+    }
   } catch (error) {
     console.error("Creating movie failed:", error);
     return res.status(500).json({ message: "Unable to create movie" });
@@ -151,6 +170,17 @@ export const updateMovie = async (req, res) => {
 
     const existingMovie = await movieWithGenres(req.params.id);
     if (!existingMovie) return res.status(404).json({ message: "Movie not found" });
+
+    if (values.duration !== undefined && values.duration !== existingMovie.duration) {
+      const [movieShowTime] = await db
+        .select({ id: showTimes.id })
+        .from(showTimes)
+        .where(eq(showTimes.movieId, req.params.id))
+        .limit(1);
+      if (movieShowTime) {
+        return res.status(409).json({ message: "Cannot change duration while the movie has showtimes" });
+      }
+    }
 
     if (Object.keys(values).length > 0) {
       await db.update(movies).set(values).where(eq(movies.id, req.params.id));

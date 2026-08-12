@@ -216,20 +216,12 @@ export const reservations = pgTable("reservations", {
    RESERVATION ↔ SEAT
 ========================= 
 */
-export const reservationSeats = pgTable(
-  "reservation_seats",
-  {
-    reservationId: uuid("reservation_id")
-      .notNull()
-      .references(() => reservations.id),
+export const reservationSeats = pgTable("reservation_seats", {
+  reservationId: uuid("reservation_id")
+    .notNull()
+    .references(() => reservations.id),
 
-    seatId: integer("seat_id")
-      .notNull()
-      .references(() => seats.id),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.reservationId, table.seatId],
-    }),
-  ],
-);
+  seatId: integer("seat_id")
+    .notNull()
+    .references(() => seats.id),
+});
