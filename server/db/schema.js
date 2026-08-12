@@ -149,6 +149,7 @@ export const movieGenres = pgTable(
 ========================= */
 export const screens = pgTable("screens", {
   id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
 });
 
 /* =========================
@@ -232,10 +233,3 @@ export const reservationSeats = pgTable(
     }),
   ],
 );
-
-
-/* 
-=========================
-   insertions
-========================= 
-*/

@@ -15,6 +15,13 @@
       "when": 1786474167302,
       "tag": "0001_add_login_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786474167303,
+      "tag": "0002_add_screen_name",
+      "breakpoints": true
     }
   ]
 }

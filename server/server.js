@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import moviesRoutes from './routes/moviesRoutes.js';
+import screensRoutes from './routes/screensRoutes.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(cors({
 
 app.use("/api", authRoutes);
 app.use("/api", moviesRoutes);
+app.use("/api", screensRoutes);
 
 const port = process.env.PORT || 5000;
 
