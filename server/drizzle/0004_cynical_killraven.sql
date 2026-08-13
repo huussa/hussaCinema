@@ -1,0 +1,1 @@
+ALTER TABLE "show_times" ADD COLUMN "end_time" timestamp NOT NULL;

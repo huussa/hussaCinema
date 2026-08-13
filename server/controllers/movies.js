@@ -97,7 +97,7 @@ async function movieWithGenres(id) {
   return movieWithGenres;
 }
 
-export const getMovies = async (_req, res) => {
+export const getMovies = async (req, res) => { // any user
   try {
     const movieList = await db.select().from(movies).orderBy(asc(movies.title));
     return res.json({ movies: await addGenresToMovies(movieList) });
@@ -107,7 +107,7 @@ export const getMovies = async (_req, res) => {
   }
 };
 
-export const getMovieById = async (req, res) => {
+export const getMovieById = async (req, res) => { // any user
   try {
     const movie = await movieWithGenres(req.params.id);
     if (!movie) return res.status(404).json({ message: "Movie not found" });
@@ -119,7 +119,7 @@ export const getMovieById = async (req, res) => {
   }
 };
 
-export const createMovie = async (req, res) => {
+export const createMovie = async (req, res) => { // only admin
   try {
     const { values, error } = movieValues(req.body);
     const { genreIds, error: genreError } = genreIdsFrom(req.body, true);
@@ -156,7 +156,7 @@ export const createMovie = async (req, res) => {
   }
 };
 
-export const updateMovie = async (req, res) => {
+export const updateMovie = async (req, res) => { // only admin
   try {
     const { values, error } = movieValues(req.body, true);
     const { genreIds, error: genreError } = genreIdsFrom(req.body);
@@ -198,7 +198,7 @@ export const updateMovie = async (req, res) => {
   }
 };
 
-export const deleteMovie = async (req, res) => {
+export const deleteMovie = async (req, res) => { // only admin
   try {
     const movie = await movieWithGenres(req.params.id);
     if (!movie) return res.status(404).json({ message: "Movie not found" });

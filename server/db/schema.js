@@ -189,7 +189,8 @@ export const showTimes = pgTable("show_times", {
     .notNull()
     .references(() => screens.id),
 
-  startTime: timestamp("start_time").notNull(),
+  startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull()
 });
 
 /* =========================

@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 
 import { db } from "../db/index.js";
 import { movies, screens, showTimes } from "../db/schema.js";
@@ -249,16 +249,7 @@ export const getShowTimes = async (req, res) => {
       });
     }
 
-    const startOfDay = new Date(`${date}T00:00:00`);
-
-    const nextDay = new Date(startOfDay);
-
-    nextDay.setDate(nextDay.getDate() + 1);
-
-    const filters = [
-      gte(showTimes.startTime, startOfDay),
-      lt(showTimes.startTime, nextDay),
-    ];
+    const filters = [sql`DATE(${showTimes.startTime}) = ${date}`];
 
     /*
       If movieId exists in the route,
@@ -283,7 +274,7 @@ export const getShowTimes = async (req, res) => {
       .from(showTimes)
       .innerJoin(movies, eq(showTimes.movieId, movies.id))
       .innerJoin(screens, eq(showTimes.screenId, screens.id))
-      .where(and(...filters))
+      .where(...filters)
       .orderBy(asc(showTimes.startTime));
 
     return res.json({
