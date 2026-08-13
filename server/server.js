@@ -6,7 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import moviesRoutes from './routes/moviesRoutes.js';
 import screensRoutes from './routes/screensRoutes.js';
 import showTimesRoutes from './routes/showTimesRoutes.js';
-// import reservationsRoutes from './routes/reservationsRoutes.js';
+import reservationsRoutes from './routes/reservationsRoutes.js';
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use("/api", authRoutes);
 app.use("/api", moviesRoutes);
 app.use("/api", screensRoutes);
 app.use("/api", showTimesRoutes);
-// app.use("/api", reservationsRoutes);
+app.use("/api", reservationsRoutes);
 
 const port = process.env.PORT || 5000;
 
