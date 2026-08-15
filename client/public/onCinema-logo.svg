@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" role="img" aria-label="onCinema">
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E31B23"/>
+      <stop offset="100%" stop-color="#B70F17"/>
+    </linearGradient>
+  </defs>
+  <circle cx="150" cy="180" r="58" fill="url(#red)"/>
+  <path d="M132 145 L132 215 L188 180 Z" fill="#FFFFFF"/>
+  <text x="225" y="210"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="112"
+        font-weight="700"
+        letter-spacing="-4">
+    <tspan fill="#C9151A">on</tspan><tspan fill="#F6EFEF">Cinema</tspan>
+  </text>
+</svg>

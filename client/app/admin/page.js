@@ -1,0 +1,16 @@
+"use client";
+
+import Link from "next/link";
+import { CalendarDays, Film, Ticket, MonitorPlay } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { PageHeader, Status, Table } from "@/components/AdminUI";
+import Loading from "@/components/Loading";
+
+export default function AdminDashboard(){
+  const [movies,setMovies]=useState([]);const [shows,setShows]=useState([]);const [screens,setScreens]=useState([]);
+  const [date,setDate]=useState(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`});
+  useEffect(()=>{Promise.all([api.getMovies(),api.getShowtimes(date),api.getScreens()]).then(([m,s,sc])=>{setMovies(m.movies||[]);setShows(s.showTimes||[]);setScreens(sc.screens||[])})},[date]);
+  return <div><PageHeader title="Dashboard" description="Live overview from your cinema API."/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[[Film,"Movies",movies.length],[CalendarDays,"Showtimes",shows.length],[MonitorPlay,"Screens",screens.length],[Ticket,"Bookings","—"]].map(([Icon,label,value])=><div key={label} className="rounded-2xl border border-white/[.06] bg-panel p-5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/10 text-red-400"><Icon className="h-5 w-5"/></span><p className="mt-5 text-sm text-zinc-600">{label}</p><p className="mt-1 text-3xl font-black">{value}</p></div>)}</div>
+  <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"><section><div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Showtimes</h2><p className="text-sm text-zinc-700">Select a date to inspect the schedule.</p></div><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="h-10 rounded-xl border border-white/[.07] bg-white/[.025] px-3 text-sm"/></div><Table><thead className="border-b border-white/[.06] text-xs uppercase tracking-wider text-zinc-700"><tr>{["Movie","Start","Screen","Duration","Status"].map(x=><th key={x} className="px-5 py-4 font-medium">{x}</th>)}</tr></thead><tbody className="divide-y divide-white/[.05]">{shows.map(s=><tr key={s.id} className="hover:bg-white/[.02]"><td className="px-5 py-4 text-sm font-medium">{s.movieTitle}</td><td className="px-5 py-4 text-sm text-zinc-500">{new Date(s.startTime).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</td><td className="px-5 py-4 text-sm text-zinc-500">{s.screenName}</td><td className="px-5 py-4 text-sm text-zinc-500">{s.duration} min</td><td className="px-5 py-4"><Status>Scheduled</Status></td></tr>)}</tbody></Table></section><section className="rounded-2xl border border-white/[.06] bg-panel p-5"><h2 className="font-semibold">Quick actions</h2><div className="mt-4 grid gap-2"><Link href="/admin/movies/new" className="rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-semibold hover:bg-red-500">Add movie</Link><Link href="/admin/showtimes/new" className="rounded-xl border border-white/[.08] px-4 py-3 text-center text-sm text-zinc-400 hover:text-white">Add showtime</Link><Link href="/admin/screens" className="rounded-xl border border-white/[.08] px-4 py-3 text-center text-sm text-zinc-400 hover:text-white">View screens</Link></div></section></div></div>
+}
